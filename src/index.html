@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KanbanFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body class="theme-dark">
+
+  <!-- Title Bar -->
+  <div class="titlebar">
+    <div class="titlebar-drag">
+      <span class="app-logo">⬡</span>
+      <span class="app-name">KanbanFlow</span>
+    </div>
+    <div class="titlebar-controls">
+      <button class="tb-btn" id="btn-minimize">─</button>
+      <button class="tb-btn" id="btn-maximize">□</button>
+      <button class="tb-btn tb-close" id="btn-close">✕</button>
+    </div>
+  </div>
+
+  <!-- Layout -->
+  <div class="app-shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-page="board">
+          <span class="nav-icon">⬛</span>
+          <span class="nav-label">Board</span>
+        </a>
+        <a href="#" class="nav-item" data-page="backlog">
+          <span class="nav-icon">◫</span>
+          <span class="nav-label">Backlog</span>
+        </a>
+        <a href="#" class="nav-item" data-page="completed">
+          <span class="nav-icon">◉</span>
+          <span class="nav-label">Completed</span>
+        </a>
+      </nav>
+      <div class="sidebar-bottom">
+        <a href="#" class="nav-item" data-page="settings">
+          <span class="nav-icon">⚙</span>
+          <span class="nav-label">Settings</span>
+        </a>
+        <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+          <span class="toggle-icon" id="theme-icon">◐</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+
+      <!-- PAGE: BOARD -->
+      <section class="page" id="page-board">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Board</h1>
+            <p class="page-subtitle">Gerencie suas tarefas em tempo real</p>
+          </div>
+          <button class="btn-new-task" id="btn-new-task">
+            <span>+</span> Nova Tarefa
+          </button>
+        </div>
+        <div class="kanban-board" id="kanban-board">
+          <div class="kanban-col" data-status="todo">
+            <div class="col-header">
+              <span class="col-dot dot-todo"></span>
+              <span class="col-title">A Fazer</span>
+              <span class="col-count" id="count-todo">0</span>
+            </div>
+            <div class="col-body" id="col-todo" data-status="todo"></div>
+          </div>
+          <div class="kanban-col" data-status="progress">
+            <div class="col-header">
+              <span class="col-dot dot-progress"></span>
+              <span class="col-title">Em Progresso</span>
+              <span class="col-count" id="count-progress">0</span>
+            </div>
+            <div class="col-body" id="col-progress" data-status="progress"></div>
+          </div>
+          <div class="kanban-col" data-status="review">
+            <div class="col-header">
+              <span class="col-dot dot-review"></span>
+              <span class="col-title">Em Revisão</span>
+              <span class="col-count" id="count-review">0</span>
+            </div>
+            <div class="col-body" id="col-review" data-status="review"></div>
+          </div>
+          <div class="kanban-col col-done" data-status="done">
+            <div class="col-header">
+              <span class="col-dot dot-done"></span>
+              <span class="col-title">Concluído</span>
+              <span class="col-count" id="count-done">0</span>
+            </div>
+            <div class="col-body" id="col-done" data-status="done"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE: BACKLOG -->
+      <section class="page hidden" id="page-backlog">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Backlog</h1>
+            <p class="page-subtitle">Tarefas sem status definido</p>
+          </div>
+          <button class="btn-new-task" id="btn-new-task-backlog">
+            <span>+</span> Nova Tarefa
+          </button>
+        </div>
+        <div class="list-view" id="backlog-list"></div>
+      </section>
+
+      <!-- PAGE: COMPLETED -->
+      <section class="page hidden" id="page-completed">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Completed</h1>
+            <p class="page-subtitle">Tarefas finalizadas</p>
+          </div>
+        </div>
+        <div class="list-view" id="completed-list"></div>
+      </section>
+
+      <!-- PAGE: SETTINGS -->
+      <section class="page hidden" id="page-settings">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Settings</h1>
+            <p class="page-subtitle">Personalize o aplicativo</p>
+          </div>
+        </div>
+        <div class="settings-panel">
+          <div class="settings-card">
+            <h2 class="settings-section-title">Situações</h2>
+            <p class="settings-desc">Edite os rótulos de situação disponíveis para as tarefas</p>
+            <div id="situations-list" class="situations-list"></div>
+            <button class="btn-add-situation" id="btn-add-situation">+ Adicionar Situação</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: New / Edit Task -->
+  <div class="modal-overlay hidden" id="modal-overlay">
+    <div class="modal" id="modal-task">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">Nova Tarefa</h2>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Título <span class="required">*</span></label>
+          <input type="text" id="task-title" placeholder="Ex: Implementar login..." />
+        </div>
+        <div class="form-group">
+          <label>Descrição</label>
+          <textarea id="task-desc" placeholder="Descreva a tarefa..." rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status</label>
+            <select id="task-status">
+              <option value="">— Sem status (Backlog) —</option>
+              <option value="todo">A Fazer</option>
+              <option value="progress">Em Progresso</option>
+              <option value="review">Em Revisão</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Situação</label>
+            <select id="task-situation"></select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btn-cancel">Cancelar</button>
+        <button class="btn-save" id="btn-save">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

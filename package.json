@@ -1,0 +1,15 @@
+{
+  "name": "kanban-flow",
+  "version": "1.0.0",
+  "description": "Kanban task organizer built with Electron",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0"
+  },
+  "author": "",
+  "license": "MIT"
+}
