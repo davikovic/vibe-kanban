@@ -143,6 +143,12 @@
             <div id="situations-list" class="situations-list"></div>
             <button class="btn-add-situation" id="btn-add-situation">+ Adicionar Situação</button>
           </div>
+          <div class="settings-card" style="margin-top:16px">
+            <h2 class="settings-section-title">Projetos</h2>
+            <p class="settings-desc">Gerencie os projetos e suas cores</p>
+            <div id="projects-list" class="situations-list"></div>
+            <button class="btn-add-situation" id="btn-add-project">+ Adicionar Projeto</button>
+          </div>
         </div>
       </section>
 
@@ -179,6 +185,25 @@
             <label>Situação</label>
             <select id="task-situation"></select>
           </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Projeto</label>
+            <select id="task-project"></select>
+          </div>
+          <div class="form-group">
+            <label>Prioridade</label>
+            <select id="task-priority">
+              <option value="low">🟢 Baixa</option>
+              <option value="medium" selected>🟡 Média</option>
+              <option value="high">🔴 Alta</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Checklist</label>
+          <div id="checklist-items" class="checklist-editor"></div>
+          <button type="button" class="btn-add-check" id="btn-add-check">+ Adicionar item</button>
         </div>
       </div>
       <div class="modal-footer">
