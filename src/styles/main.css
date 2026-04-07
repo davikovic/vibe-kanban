@@ -865,6 +865,19 @@ html, body {
 }
 .btn-save:hover { filter: brightness(1.1); transform: translateY(-1px); }
 
+/* Restore button style (completed mode) */
+#modal-task[data-completed-mode="1"] .btn-save {
+  background: var(--c-progress);
+  color: #000;
+}
+
+/* Disabled fields in completed mode */
+#modal-task[data-completed-mode="1"] #task-title,
+#modal-task[data-completed-mode="1"] #task-desc {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* ─── TOAST ─── */
 .toast-container {
   position: fixed;

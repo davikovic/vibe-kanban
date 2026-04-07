@@ -142,14 +142,22 @@ function openModal(taskId = null, presetStatus = null) {
   if (taskId) {
     const task = state.tasks.find(t => t.id === taskId);
     if (task) {
-      titleEl.textContent = 'Editar Tarefa';
+      const isCompleted = task.completed === true;
+      titleEl.textContent = isCompleted ? 'Tarefa Concluída' : 'Editar Tarefa';
       titleInput.value = task.title;
       descInput.value = task.description || '';
-      statusInput.value = task.status || '';
+      statusInput.value = isCompleted ? 'todo' : (task.status || '');
       situationSelect.value = task.situation || '';
       projectSelect.value = task.project || '';
       prioritySelect.value = task.priority || 'medium';
       renderChecklistEditor(task.checklist || []);
+
+      // Toggle completed mode
+      document.getElementById('modal-task').dataset.completedMode = isCompleted ? '1' : '';
+      document.getElementById('btn-save').textContent = isCompleted ? '↩ Restaurar' : 'Salvar';
+      // Lock title/desc/checklist if completed (optional: keep editable)
+      titleInput.disabled = isCompleted;
+      descInput.disabled = isCompleted;
     }
   } else {
     titleEl.textContent = 'Nova Tarefa';
@@ -160,6 +168,10 @@ function openModal(taskId = null, presetStatus = null) {
     projectSelect.value = '';
     prioritySelect.value = 'medium';
     renderChecklistEditor([]);
+    document.getElementById('modal-task').dataset.completedMode = '';
+    document.getElementById('btn-save').textContent = 'Salvar';
+    titleInput.disabled = false;
+    descInput.disabled = false;
   }
 
   overlay.classList.remove('hidden');
@@ -168,6 +180,10 @@ function openModal(taskId = null, presetStatus = null) {
 
 function closeModal() {
   document.getElementById('modal-overlay').classList.add('hidden');
+  document.getElementById('modal-task').dataset.completedMode = '';
+  document.getElementById('btn-save').textContent = 'Salvar';
+  document.getElementById('task-title').disabled = false;
+  document.getElementById('task-desc').disabled = false;
   state.editingTaskId = null;
 }
 
@@ -180,6 +196,8 @@ async function saveTask() {
   }
 
   const existing = state.tasks.find(t => t.id === state.editingTaskId);
+  const isCompletedMode = document.getElementById('modal-task').dataset.completedMode === '1';
+
   const task = {
     id: state.editingTaskId || `task_${Date.now()}`,
     title,
@@ -191,8 +209,8 @@ async function saveTask() {
     checklist: readChecklistFromEditor(),
     createdAt: existing?.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    completed: existing?.completed || false,
-    completedAt: existing?.completedAt || null,
+    completed: isCompletedMode ? false : (existing?.completed || false),
+    completedAt: isCompletedMode ? null : (existing?.completedAt || null),
   };
 
   const existingIdx = state.tasks.findIndex(t => t.id === task.id);
@@ -205,7 +223,12 @@ async function saveTask() {
   await window.api.saveTask(task);
   closeModal();
   renderAll();
-  showToast(state.editingTaskId ? '✓ Tarefa atualizada' : '✓ Tarefa criada', 'success');
+
+  if (isCompletedMode) {
+    showToast('↩ Tarefa restaurada para o board', 'success');
+  } else {
+    showToast(state.editingTaskId ? '✓ Tarefa atualizada' : '✓ Tarefa criada', 'success');
+  }
 }
 
 // ─── RENDER ───────────────────────────────────
@@ -441,6 +464,10 @@ function createListCard(task, type) {
 
   if (type === 'backlog') {
     card.onclick = () => openModal(task.id);
+  }
+  if (type === 'completed') {
+    card.onclick = () => openModal(task.id);
+    card.style.cursor = 'pointer';
   }
 
   return card;
