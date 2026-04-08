@@ -69,7 +69,7 @@ html, body {
   color: var(--text-primary);
   font-size: 14px;
   line-height: 1.5;
-  overflow: hidden;
+  overflow: auto;
   user-select: none;
   transition: background 0.3s, color 0.3s;
 }
@@ -1080,6 +1080,11 @@ input, textarea { user-select: text; -webkit-user-select: text; }
   align-content: start;
 }
 
+.sticky-body {
+  resize: vertical;
+  min-height: 80px;
+  max-height: 300px;
+}
 .sticky-list-card {
   border-radius: var(--radius);
   padding: 14px 16px;
@@ -1177,7 +1182,8 @@ input, textarea { user-select: text; -webkit-user-select: text; }
   display: flex;
   flex-direction: column;
   pointer-events: all;
-  overflow: hidden;
+  overflow: auto;
+  resize: both;
   transition: box-shadow var(--transition);
 }
 .sticky-win:hover {
@@ -1323,13 +1329,19 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 .sticky-link-cancel { background: var(--bg-hover); color: var(--text-secondary); }
 .sticky-link-cancel:hover { color: var(--text-primary); }
 .sticky-preview {
+  flex: 1;
   padding: 8px;
   font-size: 12px;
   overflow: auto;
-  max-height: 120px;
   border-top: 1px solid rgba(0,0,0,0.1);
 }
 
+.sticky-window {
+  resize: both;
+  overflow: auto;
+  min-width: 200px;
+  min-height: 150px;
+}
 .sticky-preview h1,
 .sticky-preview h2,
 .sticky-preview h3 {
@@ -1362,7 +1374,6 @@ input, textarea { user-select: text; -webkit-user-select: text; }
   padding: 8px;
   font-size: 12px;
   overflow: auto;
-  max-height: 120px;
 
   background: rgba(0, 0, 0, 0.15);
   border-radius: 6px;
