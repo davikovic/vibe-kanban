@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles/main.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
 </head>
 <body class="theme-dark">
 
@@ -40,6 +42,10 @@
         <a href="#" class="nav-item" data-page="completed">
           <span class="nav-icon">◉</span>
           <span class="nav-label">Completed</span>
+        </a>
+        <a href="#" class="nav-item" data-page="notes">
+          <span class="nav-icon">✎</span>
+          <span class="nav-label">Notes</span>
         </a>
       </nav>
       <div class="sidebar-bottom">
@@ -143,11 +149,34 @@
             <div id="situations-list" class="situations-list"></div>
             <button class="btn-add-situation" id="btn-add-situation">+ Adicionar Situação</button>
           </div>
+          <div class="settings-card" style="margin-top:16px">
+            <h2 class="settings-section-title">Projetos</h2>
+            <p class="settings-desc">Gerencie os projetos e suas cores</p>
+            <div id="projects-list" class="situations-list"></div>
+            <button class="btn-add-situation" id="btn-add-project">+ Adicionar Projeto</button>
+          </div>
         </div>
+      </section>
+
+      <!-- PAGE: NOTES -->
+      <section class="page hidden" id="page-notes">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Notes</h1>
+            <p class="page-subtitle">Suas notas adesivas</p>
+          </div>
+          <button class="btn-new-task" id="btn-new-sticky">
+            <span>+</span> Nova Nota
+          </button>
+        </div>
+        <div class="sticky-list" id="sticky-list"></div>
       </section>
 
     </main>
   </div>
+
+  <!-- FLOATING STICKY NOTES LAYER (outside app-shell, covers full viewport) -->
+  <div id="sticky-layer"></div>
 
   <!-- MODAL: New / Edit Task -->
   <div class="modal-overlay hidden" id="modal-overlay">
@@ -179,6 +208,25 @@
             <label>Situação</label>
             <select id="task-situation"></select>
           </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Projeto</label>
+            <select id="task-project"></select>
+          </div>
+          <div class="form-group">
+            <label>Prioridade</label>
+            <select id="task-priority">
+              <option value="low">🟢 Baixa</option>
+              <option value="medium" selected>🟡 Média</option>
+              <option value="high">🔴 Alta</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Checklist</label>
+          <div id="checklist-items" class="checklist-editor"></div>
+          <button type="button" class="btn-add-check" id="btn-add-check">+ Adicionar item</button>
         </div>
       </div>
       <div class="modal-footer">

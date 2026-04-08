@@ -95,6 +95,27 @@ ipcMain.handle('save-settings', (event, settings) => {
   return saveData(data);
 });
 
+ipcMain.handle('save-notes', (event, notes) => {
+  const data = loadData();
+  data.notes = notes;
+  return saveData(data);
+});
+
+ipcMain.handle('save-sticky', (event, note) => {
+  const data = loadData();
+  if (!data.stickies) data.stickies = [];
+  const idx = data.stickies.findIndex(n => n.id === note.id);
+  if (idx >= 0) data.stickies[idx] = note;
+  else data.stickies.push(note);
+  return saveData(data);
+});
+
+ipcMain.handle('delete-sticky', (event, noteId) => {
+  const data = loadData();
+  data.stickies = (data.stickies || []).filter(n => n.id !== noteId);
+  return saveData(data);
+});
+
 ipcMain.handle('window-minimize', () => {
   BrowserWindow.getFocusedWindow()?.minimize();
 });
