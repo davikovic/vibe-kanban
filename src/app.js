@@ -6,11 +6,13 @@
 let state = {
   tasks: [],
   settings: { situations: [], projects: [] },
+  stickies: [],
   currentPage: 'board',
   editingTaskId: null,
   draggedTaskId: null,
   isDragging: false,
-  completionTimers: {}
+  completionTimers: {},
+  stickyZTop: 100
 };
 
 // ─── PRIORITY CONFIG ──────────────────────────
@@ -48,17 +50,19 @@ async function init() {
     const data = await window.api.getData();
     state.tasks = data.tasks || [];
     state.settings = data.settings || { situations: [], projects: [] };
+    state.stickies = data.stickies || [];
   } catch (e) {
     state.tasks = [];
     state.settings = { situations: ['Aguardando Cliente', 'Aguardando Resposta', 'Em Análise', 'Bloqueado', 'Em Andamento', 'Sem Situação'], projects: [] };
+    state.stickies = [];
   }
-  // Ensure projects array exists (backward compat)
   if (!state.settings.projects) state.settings.projects = [];
   if (state.settings.projects.length === 0) state.settings.projects = JSON.parse(JSON.stringify(DEFAULT_PROJECTS));
 
   setupNav();
   setupTitlebar();
   setupModal();
+  setupStickies();
   setupDragAndDrop();
   renderAll();
   restoreCompletionTimers();
@@ -237,6 +241,7 @@ function renderAll() {
   renderBacklog();
   renderCompleted();
   renderSettings();
+  renderStickyList();
 }
 
 function renderBoard() {
@@ -628,6 +633,308 @@ function readChecklistFromEditor() {
     if (text) items.push({ text, done });
   });
   return items;
+}
+
+// ─── STICKY NOTES ─────────────────────────────
+const STICKY_COLORS = [
+  { name: 'yellow', bg: '#FEF08A', header: '#FDE047', text: '#1c1917' },
+  { name: 'blue',   bg: '#BAE6FD', header: '#7DD3FC', text: '#0c1a2e' },
+  { name: 'green',  bg: '#BBF7D0', header: '#86EFAC', text: '#052e16' },
+  { name: 'pink',   bg: '#FBCFE8', header: '#F9A8D4', text: '#3b0764' },
+  { name: 'orange', bg: '#FED7AA', header: '#FDBA74', text: '#431407' },
+  { name: 'purple', bg: '#E9D5FF', header: '#D8B4FE', text: '#2e1065' },
+];
+
+function getStickyColor(note) {
+  // If linked to a task, use project color
+  if (note.taskId) {
+    const task = state.tasks.find(t => t.id === note.taskId);
+    if (task && task.project) {
+      const proj = state.settings.projects.find(p => p.name === task.project);
+      if (proj) return hexToStickyTheme(proj.color);
+    }
+  }
+  if (note.color === 'custom' && note.colorHex) return hexToStickyTheme(note.colorHex);
+  return STICKY_COLORS.find(c => c.name === note.color) || STICKY_COLORS[0];
+}
+
+function hexToStickyTheme(hex) {
+  // Pastel bg: hex at 20% opacity on white-ish, header at 40%
+  return { bg: hex + '38', header: hex + '70', text: '#1a1a2e', hex };
+}
+
+function setupStickies() {
+  document.getElementById('btn-new-sticky').addEventListener('click', createNewSticky);
+  // Restore open stickies
+  state.stickies.forEach(note => {
+    if (note.isOpen) mountStickyWindow(note);
+  });
+  renderStickyList();
+}
+
+function createNewSticky() {
+  const id = `sticky_${Date.now()}`;
+  const note = {
+    id,
+    content: '',
+    color: STICKY_COLORS[state.stickies.length % STICKY_COLORS.length].name,
+    x: 80 + (state.stickies.length % 6) * 30,
+    y: 80 + (state.stickies.length % 4) * 30,
+    isOpen: true,
+    taskId: null,
+    createdAt: new Date().toISOString()
+  };
+  state.stickies.push(note);
+  window.api.saveSticky(note);
+  mountStickyWindow(note);
+  renderStickyList();
+}
+
+function mountStickyWindow(note) {
+  const layer = document.getElementById('sticky-layer');
+  const existing = document.getElementById(`sticky-win-${note.id}`);
+  if (existing) { existing.style.display = 'flex'; bringToFront(note.id); return; }
+
+  const color = getStickyColor(note);
+  const win = document.createElement('div');
+  win.className = 'sticky-win';
+  win.id = `sticky-win-${note.id}`;
+  win.style.cssText = `left:${note.x}px;top:${note.y}px;background:${color.bg};z-index:${++state.stickyZTop}`;
+
+  // Linked task badge
+  const task = note.taskId ? state.tasks.find(t => t.id === note.taskId) : null;
+  const taskBadge = task
+    ? `<span class="sticky-task-badge" title="${escapeHtml(task.title)}">⬡ ${escapeHtml(task.title)}</span>`
+    : `<button class="sticky-link-btn" title="Vincular tarefa">⬡ vincular</button>`;
+
+  const pickerInitialValue = note.colorHex || (STICKY_COLORS.find(c => c.name === note.color)?.bg.slice(0,7)) || '#FEF08A';
+
+  win.innerHTML = `
+    <div class="sticky-header" style="background:${color.header}">
+      <div class="sticky-drag-handle">
+        ${taskBadge}
+      </div>
+      <div class="sticky-header-actions">
+        <input type="color" class="sticky-color-picker" value="${pickerInitialValue}" title="Cor" ${note.taskId ? 'disabled' : ''} />
+        <button class="sticky-close" title="Fechar">✕</button>
+      </div>
+    </div>
+    <textarea class="sticky-body" placeholder="Escreva aqui..." spellcheck="false" style="color:${color.text}">${escapeHtml(note.content)}</textarea>
+    <div class="sticky-preview"></div>
+  `;
+
+  layer.appendChild(win);
+
+  // Bring to front on click
+  win.addEventListener('mousedown', () => bringToFront(note.id));
+
+  // Close (hide only)
+  win.querySelector('.sticky-close').addEventListener('click', (e) => {
+    e.stopPropagation();
+    note.isOpen = false;
+    win.style.display = 'none';
+    window.api.saveSticky(note);
+    renderStickyList();
+  });
+
+  // Content auto-save
+  let saveTimer = null;
+  const textarea = win.querySelector('.sticky-body');
+const preview = win.querySelector('.sticky-preview');
+
+textarea.addEventListener('input', () => {
+  let value = textarea.value;
+
+  // ===== Markdown shortcuts =====
+  value = value.replace(/^\[\s?\]/gm, '☐');
+  value = value.replace(/^\[(x|X)\]/gm, '☑');
+
+  // mantém valor atualizado
+  if (value !== textarea.value) {
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    textarea.value = value;
+    textarea.setSelectionRange(start, end);
+  }
+
+  note.content = textarea.value;
+
+  // ===== Markdown render =====
+  if (window.marked && window.DOMPurify) {
+    const raw = marked.parse(note.content);
+    preview.innerHTML = DOMPurify.sanitize(raw);
+  }
+
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    window.api.saveSticky(note);
+    renderStickyList();
+  }, 800);
+});
+
+  // Task link button
+  const linkBtn = win.querySelector('.sticky-link-btn');
+  if (linkBtn) {
+    linkBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showTaskLinkMenu(win, note);
+    });
+  }
+
+  // Color picker (only if not task-linked)
+  const picker = win.querySelector('.sticky-color-picker');
+  if (!note.taskId) {
+    picker.addEventListener('input', (e) => {
+      const hex = e.target.value;
+      const theme = hexToStickyTheme(hex);
+      win.style.background = theme.bg;
+      win.querySelector('.sticky-header').style.background = theme.header;
+      textarea.style.color = theme.text;
+      note.color = 'custom';
+      note.colorHex = hex;
+      window.api.saveSticky(note);
+    });
+    // Also show preset swatches by right-click... keep it simple with just the color picker
+  }
+
+  // Drag by header
+  makeDraggable(win, win.querySelector('.sticky-drag-handle'), note);
+}
+
+function bringToFront(noteId) {
+  const win = document.getElementById(`sticky-win-${noteId}`);
+  if (win) win.style.zIndex = ++state.stickyZTop;
+}
+
+function makeDraggable(win, handle, note) {
+  let startX, startY, startLeft, startTop, dragging = false;
+
+  handle.addEventListener('mousedown', (e) => {
+    if (e.target.classList.contains('sticky-close') || e.target.classList.contains('sticky-color-picker')) return;
+    dragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = parseInt(win.style.left) || 0;
+    startTop = parseInt(win.style.top) || 0;
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    const newLeft = Math.max(0, startLeft + dx);
+    const newTop = Math.max(44, startTop + dy); // keep below titlebar
+    win.style.left = newLeft + 'px';
+    win.style.top = newTop + 'px';
+    note.x = newLeft;
+    note.y = newTop;
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (dragging) {
+      dragging = false;
+      window.api.saveSticky(note);
+    }
+  });
+}
+
+function renderStickyList() {
+  const list = document.getElementById('sticky-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  if (state.stickies.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">✎</div><div class="empty-state-text">Nenhuma nota ainda</div><div class="empty-state-sub">Clique em "Nova Nota" para começar</div></div>`;
+    return;
+  }
+
+  [...state.stickies].reverse().forEach(note => {
+    const color = getStickyColor(note);
+    const task = note.taskId ? state.tasks.find(t => t.id === note.taskId) : null;
+    const preview = note.content.replace(/[#*`\[\]]/g, '').slice(0, 80) || 'Nota vazia';
+
+    const card = document.createElement('div');
+    card.className = 'sticky-list-card';
+    card.style.cssText = `background:${color.bg};border-left:3px solid ${color.header}`;
+    card.innerHTML = `
+      <div class="sticky-list-body">
+        ${task ? `<span class="sticky-task-badge small">⬡ ${escapeHtml(task.title)}</span>` : ''}
+        <div class="sticky-list-preview" style="color:${color.text}">${escapeHtml(preview)}${note.content.length > 80 ? '…' : ''}</div>
+        <div class="sticky-list-date">${formatDate(note.createdAt)}</div>
+      </div>
+      <div class="sticky-list-actions">
+        <button class="sticky-list-btn open-btn" title="${note.isOpen ? 'Já aberta' : 'Abrir'}">${note.isOpen ? '◉' : '◎'}</button>
+        <button class="sticky-list-btn del-btn" title="Deletar">✕</button>
+      </div>
+    `;
+
+    card.querySelector('.open-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      note.isOpen = true;
+      window.api.saveSticky(note);
+      mountStickyWindow(note);
+      renderStickyList();
+      // Navigate away from notes tab to see the floating note
+      navigateTo('board');
+    });
+
+    card.querySelector('.del-btn').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!confirm('Deletar esta nota permanentemente?')) return;
+      const win = document.getElementById(`sticky-win-${note.id}`);
+      if (win) win.remove();
+      state.stickies = state.stickies.filter(n => n.id !== note.id);
+      await window.api.deleteSticky(note.id);
+      renderStickyList();
+    });
+
+    list.appendChild(card);
+  });
+}
+
+function showTaskLinkMenu(win, note) {
+  // Remove existing popup if any
+  win.querySelector('.sticky-link-popup')?.remove();
+
+  const popup = document.createElement('div');
+  popup.className = 'sticky-link-popup';
+
+  const activeTasks = state.tasks.filter(t => !t.completed);
+  popup.innerHTML = `
+    <div class="sticky-link-popup-header">Vincular a uma tarefa</div>
+    <select class="sticky-link-select">
+      <option value="">— Nenhuma —</option>
+      ${activeTasks.map(t => `<option value="${t.id}" ${note.taskId === t.id ? 'selected' : ''}>${escapeHtml(t.title)}</option>`).join('')}
+    </select>
+    <div class="sticky-link-popup-actions">
+      <button class="sticky-link-confirm">OK</button>
+      <button class="sticky-link-cancel">Cancelar</button>
+    </div>
+  `;
+  win.appendChild(popup);
+
+  popup.querySelector('.sticky-link-confirm').addEventListener('click', () => {
+    const sel = popup.querySelector('.sticky-link-select').value;
+    note.taskId = sel || null;
+    window.api.saveSticky(note);
+    popup.remove();
+    // Remount to reflect new color and badge
+    const layer = document.getElementById('sticky-layer');
+    const old = document.getElementById(`sticky-win-${note.id}`);
+    if (old) old.remove();
+    mountStickyWindow(note);
+    renderStickyList();
+  });
+  popup.querySelector('.sticky-link-cancel').addEventListener('click', () => popup.remove());
+
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener('click', function handler(e) {
+      if (!popup.contains(e.target)) { popup.remove(); document.removeEventListener('click', handler); }
+    });
+  }, 0);
 }
 
 // ─── DELETE TASK ──────────────────────────────

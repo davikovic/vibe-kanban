@@ -74,6 +74,8 @@ html, body {
   transition: background 0.3s, color 0.3s;
 }
 
+input, textarea { user-select: text; -webkit-user-select: text; }
+
 /* ─── SCROLLBAR ─── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -796,7 +798,7 @@ html, body {
 
 .required { color: var(--c-review); }
 
-.form-group input:not([type="checkbox"]),
+.form-group input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
 .form-group textarea,
 .form-group select {
   background: var(--bg-input);
@@ -807,15 +809,25 @@ html, body {
   font-size: 14px;
   padding: 10px 12px;
   outline: none;
-  transition: border-color var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
   resize: none;
   -webkit-appearance: none;
+  width: 100%;
 }
 
-.form-group input:not([type="checkbox"]):focus,
+.form-group input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):hover,
+.form-group textarea:hover,
+.form-group select:hover {
+  border-color: rgba(108,142,255,0.25);
+  background: var(--bg-hover);
+}
+
+.form-group input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus,
 .form-group textarea:focus,
 .form-group select:focus {
   border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+  background: var(--bg-card);
 }
 
 .form-group input::placeholder,
@@ -1056,4 +1068,332 @@ html, body {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
+}
+
+/* ─── STICKY NOTES LIST PAGE ─── */
+.sticky-list {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+
+.sticky-list-card {
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: default;
+  transition: transform var(--transition), box-shadow var(--transition);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.sticky-list-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+}
+
+.sticky-list-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sticky-list-preview {
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
+  opacity: 0.85;
+}
+
+.sticky-list-date {
+  font-size: 11px;
+  opacity: 0.5;
+  margin-top: 4px;
+}
+
+.sticky-list-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.sticky-list-btn {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: rgba(0,0,0,0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition);
+}
+.sticky-list-btn:hover { background: rgba(0,0,0,0.2); }
+.sticky-list-btn.del-btn:hover { background: rgba(220,38,38,0.25); }
+
+/* ─── STICKY TASK BADGE ─── */
+.sticky-task-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(0,0,0,0.12);
+  border-radius: 20px;
+  padding: 2px 8px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+.sticky-task-badge.small { font-size: 10px; padding: 1px 6px; }
+
+/* ─── FLOATING STICKY WINDOW ─── */
+#sticky-layer {
+  position: fixed;
+  top: 44px; /* below titlebar */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.sticky-win {
+  position: absolute;
+  width: 260px;
+  min-height: 200px;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.14);
+  display: flex;
+  flex-direction: column;
+  pointer-events: all;
+  overflow: hidden;
+  transition: box-shadow var(--transition);
+}
+.sticky-win:hover {
+  box-shadow: 0 12px 40px rgba(0,0,0,0.28), 0 4px 12px rgba(0,0,0,0.18);
+}
+
+.sticky-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  cursor: grab;
+  flex-shrink: 0;
+  user-select: none;
+}
+.sticky-header:active { cursor: grabbing; }
+
+.sticky-drag-handle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.sticky-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.sticky-close {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: rgba(0,0,0,0.15);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition);
+  line-height: 1;
+}
+.sticky-close:hover { background: rgba(220,38,38,0.4); }
+
+.sticky-color-picker {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.sticky-color-picker:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.sticky-body {
+  flex: 1;
+  width: 100%;
+  min-height: 160px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 12px 14px;
+  resize: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.sticky-body::placeholder { opacity: 0.45; }
+
+/* ─── STICKY LINK BUTTON ─── */
+.sticky-link-btn {
+  font-size: 10px;
+  padding: 2px 7px;
+  border: 1px dashed rgba(0,0,0,0.25);
+  background: transparent;
+  border-radius: 20px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity var(--transition);
+  white-space: nowrap;
+}
+.sticky-link-btn:hover { opacity: 1; }
+
+/* ─── STICKY LINK POPUP ─── */
+.sticky-link-popup {
+  position: absolute;
+  top: 36px;
+  left: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  z-index: 10;
+  box-shadow: var(--shadow-lg);
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sticky-link-popup-header {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.sticky-link-select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 7px 10px;
+  outline: none;
+  -webkit-appearance: none;
+  width: 100%;
+}
+.sticky-link-popup-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.sticky-link-confirm, .sticky-link-cancel {
+  padding: 5px 14px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-size: 12px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.sticky-link-confirm { background: var(--accent); color: #fff; }
+.sticky-link-confirm:hover { filter: brightness(1.1); }
+.sticky-link-cancel { background: var(--bg-hover); color: var(--text-secondary); }
+.sticky-link-cancel:hover { color: var(--text-primary); }
+.sticky-preview {
+  padding: 8px;
+  font-size: 12px;
+  overflow: auto;
+  max-height: 120px;
+  border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.sticky-preview h1,
+.sticky-preview h2,
+.sticky-preview h3 {
+  margin: 6px 0;
+  font-size: 14px;
+}
+
+.sticky-preview code {
+  background: rgba(0,0,0,0.2);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.sticky-body {
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  border: none;
+  outline: none;
+  padding: 8px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+/* melhora legibilidade do texto */
+.sticky-body::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.sticky-preview {
+  padding: 8px;
+  font-size: 12px;
+  overflow: auto;
+  max-height: 120px;
+
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  margin-top: 6px;
+
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* headings mais fortes */
+.sticky-preview h1,
+.sticky-preview h2,
+.sticky-preview h3 {
+  margin: 6px 0;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* texto padrão */
+.sticky-preview p {
+  margin: 4px 0;
+}
+
+/* código */
+.sticky-preview code {
+  background: rgba(0, 0, 0, 0.35);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* listas */
+.sticky-preview ul {
+  padding-left: 16px;
 }
