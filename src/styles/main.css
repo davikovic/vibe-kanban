@@ -69,7 +69,7 @@ html, body {
   color: var(--text-primary);
   font-size: 14px;
   line-height: 1.5;
-  overflow: auto;
+  overflow: hidden;
   user-select: none;
   transition: background 0.3s, color 0.3s;
 }
@@ -1080,11 +1080,6 @@ input, textarea { user-select: text; -webkit-user-select: text; }
   align-content: start;
 }
 
-.sticky-body {
-  resize: vertical;
-  min-height: 80px;
-  max-height: 300px;
-}
 .sticky-list-card {
   border-radius: var(--radius);
   padding: 14px 16px;
@@ -1176,13 +1171,14 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 .sticky-win {
   position: absolute;
   width: 260px;
+  min-width: 200px;
   min-height: 200px;
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.14);
   display: flex;
   flex-direction: column;
   pointer-events: all;
-  overflow: auto;
+  overflow: hidden;
   resize: both;
   transition: box-shadow var(--transition);
 }
@@ -1246,7 +1242,7 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 .sticky-body {
   flex: 1;
   width: 100%;
-  min-height: 160px;
+  min-height: 80px;
   border: none;
   outline: none;
   background: transparent;
@@ -1257,8 +1253,35 @@ input, textarea { user-select: text; -webkit-user-select: text; }
   resize: none;
   user-select: text;
   -webkit-user-select: text;
+  overflow-y: auto;
 }
 .sticky-body::placeholder { opacity: 0.45; }
+
+/* ─── STICKY PREVIEW (markdown render area) ─── */
+.sticky-preview {
+  padding: 10px 14px;
+  flex: 1;
+  height: 10%;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-y: auto;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  word-break: break-word;
+}
+.sticky-preview h1, .sticky-preview h2, .sticky-preview h3 {
+  margin: 6px 0 4px;
+  font-weight: 600;
+}
+.sticky-preview p { margin: 4px 0; }
+.sticky-preview ul { padding-left: 16px; margin: 4px 0; }
+.sticky-preview code {
+  background: rgba(0,0,0,0.18);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: monospace;
+}
+
 
 /* ─── STICKY LINK BUTTON ─── */
 .sticky-link-btn {
@@ -1271,6 +1294,15 @@ input, textarea { user-select: text; -webkit-user-select: text; }
   opacity: 0.6;
   transition: opacity var(--transition);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+.sticky-link-btn:hover { opacity: 1; }
+.sticky-link-btn--linked {
+  border-style: solid;
+  opacity: 0.85;
+  font-weight: 600;
 }
 .sticky-link-btn:hover { opacity: 1; }
 
@@ -1328,83 +1360,3 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 .sticky-link-confirm:hover { filter: brightness(1.1); }
 .sticky-link-cancel { background: var(--bg-hover); color: var(--text-secondary); }
 .sticky-link-cancel:hover { color: var(--text-primary); }
-.sticky-preview {
-  flex: 1;
-  padding: 8px;
-  font-size: 12px;
-  overflow: auto;
-  border-top: 1px solid rgba(0,0,0,0.1);
-}
-
-.sticky-window {
-  resize: both;
-  overflow: auto;
-  min-width: 200px;
-  min-height: 150px;
-}
-.sticky-preview h1,
-.sticky-preview h2,
-.sticky-preview h3 {
-  margin: 6px 0;
-  font-size: 14px;
-}
-
-.sticky-preview code {
-  background: rgba(0,0,0,0.2);
-  padding: 2px 4px;
-  border-radius: 4px;
-}
-
-.sticky-body {
-  background: rgba(255, 255, 255, 0.08);
-  color: inherit;
-  border: none;
-  outline: none;
-  padding: 8px;
-  border-radius: 6px;
-  backdrop-filter: blur(4px);
-}
-
-/* melhora legibilidade do texto */
-.sticky-body::placeholder {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.sticky-preview {
-  padding: 8px;
-  font-size: 12px;
-  overflow: auto;
-
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 6px;
-  margin-top: 6px;
-
-  color: rgba(255, 255, 255, 0.9);
-}
-
-/* headings mais fortes */
-.sticky-preview h1,
-.sticky-preview h2,
-.sticky-preview h3 {
-  margin: 6px 0;
-  font-weight: 600;
-  color: #fff;
-}
-
-/* texto padrão */
-.sticky-preview p {
-  margin: 4px 0;
-}
-
-/* código */
-.sticky-preview code {
-  background: rgba(0, 0, 0, 0.35);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 11px;
-}
-
-/* listas */
-.sticky-preview ul {
-  padding-left: 16px;
-}
