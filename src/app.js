@@ -849,15 +849,7 @@ function mountStickyWindow(note) {
     renderStickyList();
   });
 
-  // Task linking (always available)
-  const linkBtn = win.querySelector('.sticky-link-btn');
-  if (linkBtn) {
-    linkBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showTaskLinkMenu(win, note);
-    });
-  }
-
+  // Task linking (always available — wired below with the second block removed)
   // Color picker (disabled when linked to a task)
   const picker = win.querySelector('.sticky-color-picker');
   if (!note.taskId) {
@@ -1013,7 +1005,6 @@ function renderStickyList() {
 }
 
 function showTaskLinkMenu(win, note) {
-  // Remove existing popup if any
   win.querySelector('.sticky-link-popup')?.remove();
 
   const popup = document.createElement('div');
@@ -1033,29 +1024,27 @@ function showTaskLinkMenu(win, note) {
   `;
   win.appendChild(popup);
 
+  function cleanup() {
+    popup.remove();
+    document.removeEventListener('click', outsideHandler);
+  }
+
   popup.querySelector('.sticky-link-confirm').addEventListener('click', () => {
     const sel = popup.querySelector('.sticky-link-select').value;
     note.taskId = sel || null;
     window.api.saveSticky(note);
-    popup.remove();
-    document.removeEventListener('click', outsideHandler);
+    cleanup();
     const old = document.getElementById(`sticky-win-${note.id}`);
     if (old) old.remove();
     mountStickyWindow(note);
     renderStickyList();
   });
-  popup.querySelector('.sticky-link-cancel').addEventListener('click', () => {
-    popup.remove();
-    document.removeEventListener('click', outsideHandler);
-  });
+
+  popup.querySelector('.sticky-link-cancel').addEventListener('click', cleanup);
 
   function outsideHandler(e) {
-    if (!popup.contains(e.target)) {
-      popup.remove();
-      document.removeEventListener('click', outsideHandler);
-    }
+    if (!popup.contains(e.target)) cleanup();
   }
-  // Defer so the current click that opened the popup doesn't immediately close it
   setTimeout(() => document.addEventListener('click', outsideHandler), 0);
 }
 
